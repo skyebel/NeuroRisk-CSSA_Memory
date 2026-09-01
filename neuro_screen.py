@@ -7,17 +7,6 @@ patient-facing risk assessment workflow, a live EEG acquisition and
 classification panel, a curated dry-EEG hardware catalog, longitudinal
 patient history tracking, and a data privacy and accessibility module.
 
-Changes from v3:
-  - Added affordable dry-EEG product entries with verified links and specs.
-  - Added live EEG classification: connects to a real headset via pyserial
-    (OpenBCI, Muse, or generic LSL) or falls back to a microphone input via
-    sounddevice, applies per-band IIR bandpass filters, runs a Gaussian
-    Naive Bayes classifier on a background thread, and streams class
-    probabilities to the UI in real time.
-  - Data & Privacy tab now documents concrete compliance standards (HIPAA,
-    a GDPR-aligned policy, ISO 27001 reference) with a stated retention
-    policy and data-subject rights.
-
 Disclaimer: this application is a research prototype and design artifact.
 It is not a validated diagnostic device and is not intended for clinical
 use. See README.md for scope, dataset provenance, and validation status.
@@ -27,7 +16,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import math, time, random, json, os, threading, webbrowser, queue, struct
 
-# Optional real-EEG imports (graceful fallback if absent)
+# Optional real-EEG imports
 try:
     import numpy as np
     from scipy import signal as scipy_signal
@@ -47,9 +36,7 @@ try:
 except ImportError:
     _HAS_SD = False
 
-# ----------------------------------------------------------------------------
 # DESIGN TOKENS
-# ----------------------------------------------------------------------------
 
 class Theme:
     def __init__(self, high_contrast=False):
@@ -100,9 +87,7 @@ def D(name):
         "Parkinson's":  (T.ROSE,     "#fff0f3", "#E11D48"),
     }[name]
 
-# ----------------------------------------------------------------------------
 # DATA
-# ----------------------------------------------------------------------------
 
 QUESTIONS = {
     "Alzheimer's": [
@@ -171,9 +156,7 @@ OSC_PARAMS = {
     "Parkinson's":  [("Beta", 22.0,0.75,0.08), ("Alpha",10.0,0.25,0.10), ("Theta",5.0,0.20,0.07)],
 }
 
-# ----------------------------------------------------------------------------
 # REAL AFFORDABLE DRY EEG PRODUCTS  (VERIFIED LINKS, ACCURATE SPECS, 2024/25)
-# ----------------------------------------------------------------------------
 
 EEG_PRODUCTS = [
     {
@@ -406,11 +389,9 @@ def eeg_classify(band_values):
     sm = sum(exp_s.values())
     return {c: exp_s[c]/sm for c in exp_s}
 
-# ----------------------------------------------------------------------------
 # LIVE EEG ACQUISITION ENGINE
 # Backend priority: (1) BrainFlow, (2) pyserial raw OpenBCI protocol,
 # (3) sounddevice microphone fallback. Falls back gracefully at each step.
-# ----------------------------------------------------------------------------
 
 BAND_RANGES = {
     "Delta": (0.5,  4.0),
@@ -634,9 +615,7 @@ class LiveEEGEngine:
             stream.close()
         return True
 
-# ----------------------------------------------------------------------------
 # CANVAS HELPERS
-# ----------------------------------------------------------------------------
 
 def rr(c, x1, y1, x2, y2, r=8, **kw):
     pts = [x1+r,y1, x2-r,y1, x2,y1, x2,y1+r, x2,y2-r, x2,y2,
@@ -653,9 +632,7 @@ def stars(canvas, x, y, rating, size=12, fg="#F59E0B", bg=None):
         canvas.create_text(x + i*(size+2), y, text="★", font=("Segoe UI Emoji", size-2),
                            fill=color, anchor="w")
 
-# ----------------------------------------------------------------------------
 # WAVEFORM
-# ----------------------------------------------------------------------------
 
 class WaveCanvas(tk.Canvas):
     def __init__(self, parent, h=70, **kw):
@@ -696,9 +673,7 @@ class WaveCanvas(tk.Canvas):
     def stop(self):
         if self._aid: self.after_cancel(self._aid); self._aid = None
 
-# ----------------------------------------------------------------------------
 # SCROLL FRAME
-# ----------------------------------------------------------------------------
 
 class SF(tk.Frame):
     def __init__(self, parent, bg=None, **kw):
@@ -715,9 +690,7 @@ class SF(tk.Frame):
         cv.bind_all("<MouseWheel>", lambda e: cv.yview_scroll(-1*(e.delta//120),"units"))
         self._cv = cv
 
-# ----------------------------------------------------------------------------
 # RING METER
-# ----------------------------------------------------------------------------
 
 class Ring(tk.Canvas):
     def __init__(self, parent, sz=150, **kw):
@@ -747,9 +720,7 @@ class Ring(tk.Canvas):
             else: self.set(target,color,label)
         step(0)
 
-# ----------------------------------------------------------------------------
 # MAIN APP
-# ----------------------------------------------------------------------------
 
 class NeuroRisk(tk.Tk):
     TABS = [
@@ -779,9 +750,7 @@ class NeuroRisk(tk.Tk):
         self._build_nav()
         self._switch("Risk Assessment")
 
-    # ----------------------------------------------------------------------------
     # NAVIGATION
-    # ----------------------------------------------------------------------------
     def _build_nav(self):
         nav = tk.Frame(self, bg=T.NAV_BG, height=56)
         nav.pack(fill="x"); nav.pack_propagate(False)
@@ -834,9 +803,7 @@ class NeuroRisk(tk.Tk):
             "Data & Privacy":     self._tab_privacy,
         }[name]()
 
-    # ----------------------------------------------------------------------------
     # LIVE EEG HELPERS
-    # ----------------------------------------------------------------------------
     def _stop_live_eeg(self):
         if self._live_engine:
             self._live_engine.stop()
@@ -847,9 +814,9 @@ class NeuroRisk(tk.Tk):
             self._live_poll_id = None
         self._live_q = None
 
-    # ----------------------------------------------------------------------------
+    
     # SHARED COMPONENTS
-    # ----------------------------------------------------------------------------
+    
     def _page_header(self, parent, title, subtitle):
         hf = tk.Frame(parent, bg=T.BG); hf.pack(fill="x", padx=56, pady=(36,4))
         tk.Label(hf, text=title, font=ff("Inter",24,"bold"), fg=T.TEXT, bg=T.BG).pack(anchor="w")
@@ -883,9 +850,9 @@ class NeuroRisk(tk.Tk):
         c.bind("<Button-1>", lambda e: cmd())
         return c
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: RISK ASSESSMENT
-    # ----------------------------------------------------------------------------
+    
     def _tab_risk(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1247,9 +1214,9 @@ class NeuroRisk(tk.Tk):
         tk.Label(sf.inner, text="⚠  Screening only. Consult a neurologist for clinical assessment.",
                  font=ff("Inter",8), fg=T.MUTED, bg=T.BG).pack(anchor="w", padx=56, pady=(20,32))
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: EEG PRODUCTS (REAL AFFORDABLE DRY EEG DEVICES)
-    # ----------------------------------------------------------------------------
+    
     def _tab_products(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1385,9 +1352,9 @@ class NeuroRisk(tk.Tk):
             w.bind("<Enter>", lambda e, sh=s: sh.config(bg=color))
             w.bind("<Leave>", lambda e, sh=s: sh.config(bg=T.BORDER))
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: NEURAL OSCILLATIONS
-    # ----------------------------------------------------------------------------
+    
     def _tab_oscillations(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1441,9 +1408,9 @@ class NeuroRisk(tk.Tk):
                 bcanv.bind("<Configure>",_db); bcanv.after(120,lambda cv=bcanv,mv=m,c=color:_db(None,cv,mv,c))
         tk.Frame(f, bg=T.BG, height=40).pack()
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: PATIENT HISTORY
-    # ----------------------------------------------------------------------------
+    
     def _tab_history(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1524,9 +1491,9 @@ class NeuroRisk(tk.Tk):
         if messagebox.askyesno("Clear History","Delete all session records? This cannot be undone."):
             self.history.clear(); save_history(self.history); self._switch("Patient History")
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: ACCESSIBILITY
-    # ----------------------------------------------------------------------------
+    
     def _tab_accessibility(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1618,9 +1585,9 @@ class NeuroRisk(tk.Tk):
             f.config(bg="#2d2a6e" if active else T.NAV_BG)
             btn.config(bg="#2d2a6e" if active else T.NAV_BG, fg=T.NAV_ACC if active else T.NAV_SUB)
 
-    # ----------------------------------------------------------------------------
+    
     # TAB: DATA & PRIVACY  (WITH CONCRETE COMPLIANCE STANDARDS)
-    # ----------------------------------------------------------------------------
+    
     def _tab_privacy(self):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
@@ -1732,7 +1699,6 @@ class NeuroRisk(tk.Tk):
         tk.Frame(f, bg=T.BG, height=40).pack()
 
 
-# ----------------------------------------
 if __name__ == "__main__":
     app = NeuroRisk()
     app.mainloop()
