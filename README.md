@@ -64,7 +64,7 @@ Full citations are listed in [References](#references).
 |---|---|
 | `neuro_screen.py` | Desktop prototype (Tkinter) implementing the patient risk-assessment workflow, live EEG acquisition panel, dry-EEG hardware catalog, longitudinal history tracking, and accessibility and data-privacy modules. |
 | `AD_EEG_SVM_v12.ipynb` | Model development notebook: spectral feature extraction and a nested cross-validated SVM classifier for Alzheimer's disease detection from resting-state EEG. |
-| `CSSA_Memory_Project_NeuroRisk.pdf` | Project pitch deck covering the background research, target datasets, proposed system, and deployment plan： delivered at the joint CSSA & Decoded Brain Project Showcase. |
+| `CSSA_Memory_Project_NeuroRisk.pdf` | Project pitch deck covering the background research, target datasets, proposed system, and deployment plan：delivered at the joint CSSA & Decoded Brain Project Showcase. |
 
 ## Target Conditions and Datasets
 
