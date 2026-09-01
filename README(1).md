@@ -24,7 +24,7 @@ medical device and is not intended for clinical diagnostic use. See
 | Angus Liu | Cognitive Science, Machine Learning |
 | Parisa Emam | Data Science |
 | Nitika Bhawe | Cognitive Science, Neuroscience |
-| Skye Belsher | Data Science, Cognitive Science, Machine Learning |
+| Skye Belsher | Math-CS + Cognitive Science, Machine Learning |
 
 ## Motivation
 
