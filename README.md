@@ -1,6 +1,6 @@
 # NeuroRisk: EEG-Based Neurological Risk Screening
 
-Cognitive Science Student Association (CSSA) Memory Group | 2025-2026
+**Cognitive Science Student Association (CSSA) Memory Group | 2025-2026**
 
 NeuroRisk is a research and prototyping project investigating whether
 low-cost, dry-electrode EEG hardware combined with machine learning can
