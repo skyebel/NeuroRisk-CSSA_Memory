@@ -172,7 +172,7 @@ EEG_PRODUCTS = [
             "(OSC output available). Solid alpha/theta SNR for resting-state work."
         ),
         "benefits": [
-            "Truly dry — no gel or prep",
+            "Truly dry, no gel or prep",
             "Companion app with OSC streaming",
             "Excellent battery (5 h)",
             "Strong open-source community",
@@ -190,7 +190,7 @@ EEG_PRODUCTS = [
         "rating": 4.2,
         "tags": ["Dry sensors", "Sleep tracking", "Soft fabric", "Comfortable"],
         "desc": (
-            "Soft woven headband form factor of Muse 2 — ideal for prolonged wear "
+            "Soft woven headband form factor of Muse 2, ideal for prolonged wear "
             "and sleep studies. Same 4-channel dry EEG with an accelerometer and "
             "pulse oximeter. Compatible with all Muse 2 SDKs."
         ),
@@ -244,7 +244,7 @@ EEG_PRODUCTS = [
         "benefits": [
             "Lowest-cost open EEG board",
             "BrainFlow + OpenBCI GUI support",
-            "BLE — no dongle needed",
+            "BLE: no dongle needed",
             "Pairs with Ultracortex or DIY electrodes",
         ],
         "interface": "Bluetooth LE → OpenBCI GUI / BrainFlow",
@@ -288,7 +288,7 @@ EEG_PRODUCTS = [
             "frontal-temporal coverage for emotion and workload studies."
         ),
         "benefits": [
-            "Completely dry — no saline prep",
+            "Completely dry,no saline prep",
             "Gyroscope + accelerometer onboard",
             "Emotiv Pro SDK (Python, C++)",
             "Cross-platform app",
@@ -336,7 +336,7 @@ EEG_PRODUCTS = [
         ),
         "benefits": [
             "CE-marked, FDA 510(k) listed",
-            "Active electrode — excellent noise rejection",
+            "Active electrode, excellent noise rejection",
             "g.BSanalyze MATLAB toolbox included",
             "Real-time BCI latency < 10 ms",
         ],
@@ -348,6 +348,7 @@ EEG_PRODUCTS = [
 ]
 
 HISTORY_FILE = os.path.expanduser("~/.neurorisk_history.json")
+HISTORY_FILE_DISPLAY = os.path.join("~", ".neurorisk_history.json")
 
 def load_history():
     try:
@@ -438,7 +439,7 @@ class LiveEEGEngine:
     # backend selection
     def _run(self):
         if not _HAS_NUMPY:
-            self.status = "numpy/scipy missing — install to enable live EEG"
+            self.status = "numpy/scipy missing, install to enable live EEG"
             self._q.put({"status": self.status, "bands": None})
             return
 
@@ -468,7 +469,7 @@ class LiveEEGEngine:
         params = BrainFlowInputParams()
         # Auto-detect: try synthetic first (always works), then real boards
         board_ids_to_try = [
-            BoardIds.SYNTHETIC_BOARD,        # always succeeds — good for demo
+            BoardIds.SYNTHETIC_BOARD,        
             BoardIds.CYTON_BOARD,
             BoardIds.GANGLION_BOARD,
             BoardIds.MUSE_2_BOARD,
@@ -576,7 +577,7 @@ class LiveEEGEngine:
 
     # Microphone demo mode (not real EEG; labelled as such in the UI)
     def _try_mic(self):
-        self.source = "Microphone (demo — not real EEG)"
+        self.source = "Microphone (demo, not real EEG)"
         self.status  = "⚠ Demo mode: using microphone audio, NOT a real EEG signal"
         fs   = 4000   # lower sr fine for demo
         buf  = []
@@ -617,6 +618,19 @@ class LiveEEGEngine:
 
 # CANVAS HELPERS
 
+def tint(hex_color, alpha=0.12, bg_hex=None):
+    """Blend hex_color over bg_hex at the given alpha (0-1) to produce a
+    real solid hex color. Tkinter does not support 8-digit alpha hex
+    codes (e.g. '#2563EB18'), so this replaces that broken pattern."""
+    bg_hex = bg_hex or T.PANEL
+    hc = hex_color.lstrip("#"); bc = bg_hex.lstrip("#")
+    r1, g1, b1 = int(hc[0:2], 16), int(hc[2:4], 16), int(hc[4:6], 16)
+    r2, g2, b2 = int(bc[0:2], 16), int(bc[2:4], 16), int(bc[4:6], 16)
+    nr = round(r1 * alpha + r2 * (1 - alpha))
+    ng = round(g1 * alpha + g2 * (1 - alpha))
+    nb = round(b1 * alpha + b2 * (1 - alpha))
+    return f"#{nr:02x}{ng:02x}{nb:02x}"
+
 def rr(c, x1, y1, x2, y2, r=8, **kw):
     pts = [x1+r,y1, x2-r,y1, x2,y1, x2,y1+r, x2,y2-r, x2,y2,
            x2,y2, x2-r,y2, x1+r,y2, x1,y2, x1,y2, x1,y2-r,
@@ -648,6 +662,7 @@ class WaveCanvas(tk.Canvas):
         else: self._draw()
 
     def _draw(self, e=None):
+        if not self.winfo_exists(): return
         self.delete("all")
         w = self.winfo_width(); h = self.winfo_height()
         if w < 10 or not self._comps: return
@@ -667,8 +682,11 @@ class WaveCanvas(tk.Canvas):
                              fill=self._color, anchor="w")
 
     def _anim(self):
+        if not self.winfo_exists():
+            self._aid = None
+            return
         self._t += 0.18; self._draw()
-        self._aid = self.after(16, self._anim)
+        self._aid = self.after(33, self._anim)
 
     def stop(self):
         if self._aid: self.after_cancel(self._aid); self._aid = None
@@ -696,9 +714,10 @@ class Ring(tk.Canvas):
     def __init__(self, parent, sz=150, **kw):
         super().__init__(parent, width=sz, height=sz,
                          bg=kw.pop("bg", T.PANEL), highlightthickness=0, **kw)
-        self.sz = sz; self._rm = False
+        self.sz = sz; self._rm = False; self._aid = None
 
     def set(self, pct, color, label=""):
+        if not self.winfo_exists(): return
         s=self.sz; pad=s*0.13; lw=int(s*0.10)
         self.delete("all")
         self.create_arc(pad,pad,s-pad,s-pad,start=90,extent=-360,
@@ -711,13 +730,26 @@ class Ring(tk.Canvas):
         self.create_text(s/2,s/2+s*0.12,text=label,
                          font=ff("Inter",int(s*0.06),"bold"),fill=T.MUTED)
 
-    def animate(self, target, color, label="", steps=45, delay=16):
-        if self._rm: self.set(target,color,label); return
+    def stop(self):
+        if self._aid:
+            try: self.after_cancel(self._aid)
+            except Exception: pass
+            self._aid = None
+
+    def animate(self, target, color, label="", steps=30, delay=14):
+        self.stop()
+        if self._rm or not self.winfo_exists():
+            self.set(target,color,label); return
         def step(i):
+            if not self.winfo_exists():
+                self._aid = None
+                return
             t=i/steps; p=target*(3*t*t-2*t*t*t)
             self.set(p,color,label)
-            if i<steps: self.after(delay,lambda:step(i+1))
-            else: self.set(target,color,label)
+            if i<steps:
+                self._aid = self.after(delay,lambda:step(i+1))
+            else:
+                self._aid = None
         step(0)
 
 # MAIN APP
@@ -743,6 +775,7 @@ class NeuroRisk(tk.Tk):
         self.history   = load_history()
         self._rm       = False
         self._waves    = []
+        self._rings    = []
         self._live_engine   = None
         self._live_q        = None
         self._live_poll_id  = None
@@ -779,12 +812,23 @@ class NeuroRisk(tk.Tk):
         tk.Frame(self, bg=T.BORDER, height=1).pack(fill="x")
         self.body = tk.Frame(self, bg=T.BG); self.body.pack(fill="both", expand=True)
 
-    def _switch(self, name):
-        self._stop_live_eeg()
+    def _cleanup_animations(self):
+        """Stop any in-flight Ring/WaveCanvas timers before their widgets
+        are destroyed. Without this, scheduled .after() callbacks keep
+        firing on destroyed widgets: wasted work and visible stutter
+        during scrolling and tab switches."""
         for wc in self._waves:
             try: wc.stop()
-            except: pass
+            except Exception: pass
         self._waves.clear()
+        for rg in self._rings:
+            try: rg.stop()
+            except Exception: pass
+        self._rings.clear()
+
+    def _switch(self, name):
+        self._stop_live_eeg()
+        self._cleanup_animations()
         self._active.set(name)
         for lbl, (f, btn) in self._tab_btns.items():
             if lbl == name:
@@ -876,7 +920,7 @@ class NeuroRisk(tk.Tk):
             for nm, pct in self.scores.items():
                 col = D(nm)[0]; _, rlbl, rcol = risk_band(pct)
                 cf = tk.Frame(rr_row, bg=T.BG); cf.pack(side="left", padx=24)
-                ring = Ring(cf, sz=110, bg=T.BG); ring._rm = self._rm; ring.pack()
+                ring = Ring(cf, sz=110, bg=T.BG); ring._rm = self._rm; ring.pack(); self._rings.append(ring)
                 ring.animate(pct, col, rlbl, steps=40)
                 tk.Label(cf, text=nm, font=ff("Inter",9,"bold"), fg=T.TEXT, bg=T.BG).pack(pady=(6,0))
 
@@ -901,7 +945,7 @@ class NeuroRisk(tk.Tk):
         tk.Label(body, text=descs[name], font=ff("Inter",9), fg=T.MUTED, bg=T.PANEL).pack(anchor="w", pady=(2,12))
         if done:
             pct = self.scores[name]; _, rlbl, rcol = risk_band(pct)
-            mini = Ring(body, sz=72, bg=T.PANEL); mini._rm = self._rm; mini.pack(anchor="w", pady=(0,10))
+            mini = Ring(body, sz=72, bg=T.PANEL); mini._rm = self._rm; mini.pack(anchor="w", pady=(0,10)); self._rings.append(mini)
             mini.animate(pct, pri, rlbl, steps=30)
         btn = tk.Canvas(body, width=150, height=36, bg=T.PANEL, highlightthickness=0, cursor="hand2"); btn.pack(anchor="w", pady=(4,0))
         rr(btn, 0, 0, 150, 36, r=6, fill=pri, outline="")
@@ -913,6 +957,7 @@ class NeuroRisk(tk.Tk):
 
     # Questionnaire
     def _open_questionnaire(self, name):
+        self._cleanup_animations()
         for w in self.body.winfo_children(): w.destroy()
         pri, tint, dark = D(name)
         qs = QUESTIONS[name]
@@ -1153,6 +1198,7 @@ class NeuroRisk(tk.Tk):
         self._show_result(name, pct, eeg_result)
 
     def _show_result(self, name, pct, eeg_result=None):
+        self._cleanup_animations()
         for w in self.body.winfo_children(): w.destroy()
         pri, tint, dark = D(name); band, rlbl, rcol = risk_band(pct)
         subnav = tk.Frame(self.body, bg=T.NAV_BG, height=48)
@@ -1169,7 +1215,7 @@ class NeuroRisk(tk.Tk):
         right = tk.Frame(content, bg=T.BG); right.pack(side="left", fill="both", expand=True)
 
         tk.Label(left, text="QUESTIONNAIRE RISK SCORE", font=ff("Inter",8,"bold"), fg=T.MUTED, bg=T.BG).pack()
-        ring = Ring(left, sz=180, bg=T.BG); ring._rm = self._rm; ring.pack(pady=(8,14))
+        ring = Ring(left, sz=180, bg=T.BG); ring._rm = self._rm; ring.pack(pady=(8,14)); self._rings.append(ring)
         ring.animate(pct, pri, rlbl, steps=55)
         badge = tk.Canvas(left, width=170, height=38, bg=T.BG, highlightthickness=0); badge.pack()
         rr(badge, 0, 0, 170, 38, r=6, fill=rcol, outline="")
@@ -1180,7 +1226,7 @@ class NeuroRisk(tk.Tk):
             tk.Frame(left, bg=T.BORDER, height=1, width=180).pack(pady=(18,10))
             tk.Label(left, text="EEG CLASSIFICATION (LIVE)", font=ff("Inter",8,"bold"), fg=T.MUTED, bg=T.BG).pack()
             eeg_col = D(eeg_pred)[0] if eeg_pred != "Normal" else T.GREEN
-            eeg_ring = Ring(left, sz=130, bg=T.BG); eeg_ring._rm = self._rm; eeg_ring.pack(pady=(6,8))
+            eeg_ring = Ring(left, sz=130, bg=T.BG); eeg_ring._rm = self._rm; eeg_ring.pack(pady=(6,8)); self._rings.append(eeg_ring)
             eeg_ring.animate(eeg_conf, eeg_col, eeg_pred.split("'")[0], steps=40)
             tk.Frame(left, bg=T.BORDER, height=1, width=180).pack(pady=(10,8))
             tk.Label(left, text="COMBINED ASSESSMENT", font=ff("Inter",7,"bold"), fg=T.MUTED, bg=T.BG).pack()
@@ -1188,7 +1234,7 @@ class NeuroRisk(tk.Tk):
             combined_color = T.RED if (not match and band=="high") else (T.AMBER if not match else T.GREEN)
             match_txt = "EEG confirms questionnaire" if match else f"EEG suggests {eeg_pred}"
             cb = tk.Canvas(left, width=180, height=44, bg=T.BG, highlightthickness=0); cb.pack(pady=(4,0))
-            rr(cb, 0, 0, 180, 44, r=6, fill=combined_color+"22", outline=combined_color)
+            rr(cb, 0, 0, 180, 44, r=6, fill=tint(combined_color, 0.13), outline=combined_color)
             cb.create_text(90, 22, text=match_txt, font=ff("Inter",8,"bold"), fill=combined_color, width=160)
 
         tk.Label(right, text="Interpretation", font=ff("Inter",20,"bold"), fg=T.TEXT, bg=T.BG).pack(anchor="w")
@@ -1202,6 +1248,7 @@ class NeuroRisk(tk.Tk):
         bar_wrap = tk.Frame(right, bg=T.BG); bar_wrap.pack(fill="x", pady=(10,0))
         bar_cv = tk.Canvas(bar_wrap, height=24, bg=T.BG, highlightthickness=0); bar_cv.pack(fill="x")
         def _db(e=None):
+            if not bar_cv.winfo_exists(): return
             bar_cv.delete("all"); w2=bar_cv.winfo_width()
             rr(bar_cv,0,0,w2,24,r=12,fill=T.BORDER,outline="")
             fw=max(12,int(w2*pct/100)); rr(bar_cv,0,0,fw,24,r=12,fill=pri,outline="")
@@ -1221,7 +1268,7 @@ class NeuroRisk(tk.Tk):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
         self._page_header(f, "Affordable Dry EEG Devices",
-                          "Curated list of real EEG headsets — verified specs, accurate pricing, and direct purchase links.")
+                          "Curated list of real EEG headsets: verified specs, accurate pricing, and direct purchase links.")
 
         crit = self._card(f, pady=(0,28))
         tk.Label(crit, text="Selection Criteria", font=ff("Inter",12,"bold"), fg=T.TEXT, bg=T.PANEL).pack(anchor="w", pady=(0,10))
@@ -1232,7 +1279,7 @@ class NeuroRisk(tk.Tk):
                          ("Peer-reviewed validation",T.AMBER),
                          ("Active community support",T.TEAL),
                          ("Accessible price points",T.RED)]:
-            self._pill_tag(tr, tag, color=col, bg=col+"15")
+            self._pill_tag(tr, tag, color=col, bg=tint(col, 0.08))
 
         filter_row = tk.Frame(f, bg=T.BG); filter_row.pack(fill="x", padx=56, pady=(0,18))
         tk.Label(filter_row, text="Sort by:", font=ff("Inter",9), fg=T.MUTED, bg=T.BG).pack(side="left", padx=(0,10))
@@ -1332,7 +1379,7 @@ class NeuroRisk(tk.Tk):
         # Tags
         tags_row = tk.Frame(body, bg=T.PANEL); tags_row.pack(anchor="w", pady=(8,4))
         for tag in prod["tags"][:3]:
-            self._pill_tag(tags_row, tag, color=color, bg=color+"18")
+            self._pill_tag(tags_row, tag, color=color, bg=tint(color, 0.09))
 
         tk.Frame(body, bg=T.BORDER, height=1).pack(fill="x", pady=(10,10))
 
@@ -1361,10 +1408,10 @@ class NeuroRisk(tk.Tk):
         self._page_header(f, "Neural Oscillation Patterns",
                           "Simulated EEG waveforms comparing healthy baseline against each neurological condition.")
         desc_map = {
-            "Normal":       "Healthy resting-state EEG is dominated by alpha waves (8–13 Hz), reflecting relaxed wakefulness. Beta underpins focused cognition; theta and delta are subdominant.",
-            "Alzheimer's":  "AD hallmark: alpha power diminishes while delta/theta power increases — 'EEG slowing' correlates with cholinergic deficit and hippocampal atrophy.",
+            "Normal":       "Healthy resting-state EEG is dominated by alpha waves (8-13 Hz), reflecting relaxed wakefulness. Beta underpins focused cognition; theta and delta are subdominant.",
+            "Alzheimer's":  "AD hallmark: alpha power diminishes while delta/theta power increases, 'EEG slowing' correlates with cholinergic deficit and hippocampal atrophy.",
             "Huntington's": "Early HD shows diffuse theta augmentation and alpha reduction. Inter-hemispheric coherence decreases as striatal and cortical degeneration progresses.",
-            "Parkinson's":  "PD is characterised by pathological beta-band hypersynchrony (13–30 Hz) in the basal-ganglia-cortical loop, impairing motor initiation.",
+            "Parkinson's":  "PD is characterised by pathological beta-band hypersynchrony (13-30 Hz) in the basal-ganglia-cortical loop, impairing motor initiation.",
         }
         colors_map = {"Normal":T.GREEN,"Alzheimer's":T.TEAL,"Huntington's":T.AMETHYST,"Parkinson's":T.ROSE}
         for cond in ["Normal","Alzheimer's","Huntington's","Parkinson's"]:
@@ -1400,6 +1447,7 @@ class NeuroRisk(tk.Tk):
                 tk.Label(br, text=band, font=ff("Inter",8), fg=T.TEXT2, bg=T.PANEL, width=22, anchor="w").pack(side="left")
                 bcanv = tk.Canvas(br, height=14, bg=T.BG2, highlightthickness=0); bcanv.pack(side="left", fill="x", expand=True)
                 def _db(e, cv=bcanv, mv=m, c=color):
+                    if not cv.winfo_exists(): return
                     cv.delete("all"); w2=cv.winfo_width()
                     rr(cv,0,0,w2,14,r=4,fill=T.BORDER,outline="")
                     fw=int(w2*mv)
@@ -1437,12 +1485,13 @@ class NeuroRisk(tk.Tk):
             for cond, recs in by_cond.items():
                 col = D(cond)[0]
                 tk.Frame(f, bg=T.BORDER, height=1).pack(fill="x", padx=56, pady=(12,8))
-                tk.Label(f, text=f"{cond}  — Score Trend", font=ff("Inter",12,"bold"), fg=T.TEXT, bg=T.BG).pack(anchor="w", padx=56)
+                tk.Label(f, text=f"{cond}  - Score Trend", font=ff("Inter",12,"bold"), fg=T.TEXT, bg=T.BG).pack(anchor="w", padx=56)
                 ts = tk.Frame(f, bg=T.BORDER); ts.pack(fill="x", padx=56, pady=(4,0))
                 tc = tk.Frame(ts, bg=T.PANEL); tc.pack(padx=1,pady=1,fill="x")
                 chrt = tk.Canvas(tc, height=120, bg=T.PANEL, highlightthickness=0); chrt.pack(fill="x", padx=16, pady=14)
                 data = [r["score"] for r in recs[-8:]]
                 def _draw_chart(e, cv=chrt, d=data, c=col):
+                    if not cv.winfo_exists(): return
                     cv.delete("all"); w2=cv.winfo_width(); h2=cv.winfo_height()
                     if w2<20 or not d: return
                     pl=44;pb2=20;pr=16;pt=10; pw=w2-pl-pr; ph=h2-pb2-pt; n=len(d)
@@ -1472,13 +1521,13 @@ class NeuroRisk(tk.Tk):
                          bg=T.BG2, width=cw//7, anchor="w", padx=8, pady=6).pack(side="left")
             for i, rec in enumerate(reversed(self.history)):
                 rb = T.PANEL if i%2==0 else T.BG2; rw = tk.Frame(tw, bg=rb); rw.pack(fill="x")
-                cond = rec.get("condition","—")
+                cond = rec.get("condition","-")
                 _c = D(cond)[0] if cond in QUESTIONS else T.MUTED
-                _,_,bcol = risk_band(rec.get("score",0)); eeg_val = rec.get("eeg") or "—"
+                _,_,bcol = risk_band(rec.get("score",0)); eeg_val = rec.get("eeg") or "-"
                 for txt, cw, fc in [
-                    (rec.get("date","—"),180,T.TEXT2),(cond,150,_c),
-                    (f"{rec.get('score',0):.1f}%",90,T.TEXT),(rec.get("band","—").upper(),130,bcol),
-                    (eeg_val,130,T.ACCENT if eeg_val!="—" else T.MUTED)]:
+                    (rec.get("date","-"),180,T.TEXT2),(cond,150,_c),
+                    (f"{rec.get('score',0):.1f}%",90,T.TEXT),(rec.get("band","-").upper(),130,bcol),
+                    (eeg_val,130,T.ACCENT if eeg_val!="-" else T.MUTED)]:
                     tk.Label(rw,text=txt,font=ff("Inter",9),fg=fc,bg=rb,width=cw//7,anchor="w",padx=8,pady=7).pack(side="left")
             cr = tk.Frame(f, bg=T.BG); cr.pack(anchor="w", padx=56, pady=(18,0))
             clr = tk.Canvas(cr, width=140, height=34, bg=T.BG, highlightthickness=0, cursor="hand2"); clr.pack(side="left")
@@ -1592,7 +1641,7 @@ class NeuroRisk(tk.Tk):
         sf = SF(self.body); sf.pack(fill="both", expand=True)
         f  = sf.inner
         self._page_header(f, "Data & Privacy",
-                          "How NeuroRisk handles your information — with reference to applicable data standards.")
+                          "How NeuroRisk handles your information, with reference to applicable data standards.")
 
         # Compliance badges row
         badge_card = self._card(f, pady=(0,20))
@@ -1606,12 +1655,14 @@ class NeuroRisk(tk.Tk):
             ("NIST SP 800-53", "Security & Privacy Controls\nfor Info Systems", T.AMBER),
             ("HL7 FHIR", "Health Level 7 / Fast Healthcare\nInteroperability Resources", T.TEAL),
         ]
+        BADGE_W, BADGE_H = 128, 92
         for short, long, col in STANDARDS:
-            bc = tk.Canvas(badge_row, width=110, height=64, bg=T.PANEL, highlightthickness=0)
-            bc.pack(side="left", padx=(0,12))
-            rr(bc, 0, 0, 110, 64, r=8, fill=col+"18", outline=col, width=1)
-            bc.create_text(55, 22, text=short, font=ff("Inter",10,"bold"), fill=col)
-            bc.create_text(55, 44, text=long, font=ff("Inter",6), fill=T.MUTED, width=104, justify="center")
+            bc = tk.Canvas(badge_row, width=BADGE_W, height=BADGE_H, bg=T.PANEL, highlightthickness=0)
+            bc.pack(side="left", padx=(0,12), pady=(0,4))
+            rr(bc, 0, 0, BADGE_W, BADGE_H, r=8, fill=tint(col, 0.09), outline=col, width=1)
+            bc.create_text(BADGE_W//2, 18, text=short, font=ff("Inter",10,"bold"), fill=col)
+            bc.create_text(BADGE_W//2, 34, text=long, font=ff("Inter",7),
+                            fill=T.MUTED, width=BADGE_W-14, justify="center", anchor="n")
 
         tk.Label(badge_card,
                  text="NeuroRisk is a research tool and not a certified HIPAA Business Associate or CE-marked medical device. "
@@ -1622,7 +1673,7 @@ class NeuroRisk(tk.Tk):
         items = [
             ("🔒", "Local-Only Storage", T.GREEN,
              "All questionnaire responses, risk scores, and EEG band values are stored exclusively on your local "
-             "device at:\n\n  " + HISTORY_FILE + "\n\nNo data is transmitted to any server, cloud service, or third party. "
+             "device at:\n\n  " + HISTORY_FILE_DISPLAY + "\n\nNo data is transmitted to any server, cloud service, or third party. "
              "This satisfies the HIPAA Minimum Necessary and GDPR Data Minimisation principles."),
 
             ("🚫", "No Telemetry or Analytics", T.RED,
@@ -1638,9 +1689,9 @@ class NeuroRisk(tk.Tk):
 
             ("👤", "Data-Subject Rights", T.ACCENT,
              "You have full control over all data stored by NeuroRisk:\n\n"
-             "  • Right of Access — view all records in the Patient History tab\n"
-             "  • Right to Erasure — use 'Clear History' to delete all records permanently\n"
-             "  • Right to Portability — the JSON file at the path above is human-readable and portable\n\n"
+             "  • Right of Access: view all records in the Patient History tab\n"
+             "  • Right to Erasure: use 'Clear History' to delete all records permanently\n"
+             "  • Right to Portability: the JSON file at the path above is human-readable and portable\n\n"
              "These rights align with GDPR Chapter 3 and HIPAA's Individual Rights provisions."),
 
             ("🔐", "Security Measures", T.BLUE,
@@ -1660,7 +1711,7 @@ class NeuroRisk(tk.Tk):
             ("📡", "EEG Data Handling", T.TEAL,
              "Real-time EEG band power values streamed from a connected headset are processed in memory only "
              "and are never written to disk. Only the final classification label (e.g. 'Normal', 'Parkinson\\'s') "
-             "is optionally saved to the history record — no raw waveform data is persisted."),
+             "is optionally saved to the history record, no raw waveform data is persisted."),
 
             ("⚕️", "Medical & Research Disclaimer", T.AMBER,
              "NeuroRisk is for informational and research purposes only. It is NOT:\n\n"
@@ -1679,7 +1730,7 @@ class NeuroRisk(tk.Tk):
         for icon, title, color, body_txt in items:
             sc = self._card(f, pady=(0,10), accent=color)
             h = tk.Frame(sc, bg=T.PANEL); h.pack(fill="x", pady=(0,8))
-            ic = tk.Canvas(h, width=32, height=32, bg=color+"15", highlightthickness=0); ic.pack(side="left", padx=(0,12))
+            ic = tk.Canvas(h, width=32, height=32, bg=tint(color, 0.08), highlightthickness=0); ic.pack(side="left", padx=(0,12))
             ic.create_text(16,16, text=icon, font=("Segoe UI Emoji",16))
             tk.Label(h, text=title, font=ff("Inter",12,"bold"), fg=T.TEXT, bg=T.PANEL).pack(side="left", anchor="w", pady=4)
             tk.Label(sc, text=body_txt, font=ff("Inter",10), fg=T.TEXT2, bg=T.PANEL,
