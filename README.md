@@ -19,12 +19,12 @@ medical device and is not intended for clinical diagnostic use. See
 
 | Name | Focus Area |
 |---|---|
-| Tessa Pizzo | Cognitive Science, Neuroscience |
-| Audrey Perillo | Cognitive Science, Neuroscience |
-| Angus Liu | Cognitive Science, Machine Learning |
+| Tessa Pizzo | Cognitive Science (Neuroscience) |
+| Audrey Perillo | Cognitive Science (Neuroscience) |
+| Angus Liu | Cognitive Science (Machine Learning) |
 | Parisa Emam | Data Science |
-| Nitika Bhawe | Cognitive Science, Neuroscience |
-| Skye Belsher | Math-CS + Cognitive Science, Machine Learning |
+| Nitika Bhawe | Cognitive Science (Neuroscience) |
+| Skye Belsher | Mathematics-Computer Science + Cognitive Science (Machine Learning) |
 
 ## Motivation
 
@@ -184,22 +184,6 @@ pip install numpy scipy brainflow pyserial sounddevice
 python neuro_screen.py
 ```
 
-## Deployment Plan
-
-The project proposal outlines a phased rollout:
-
-1. **UCSD pilot.** Test the prototype with students, researchers, labs,
-   and faculty to refine accuracy, usability, and EEG data workflows.
-2. **Local deployment.** Partner with local clinics and community health
-   organizations, including the Presbyterian Foundation, to trial the
-   tool in a clinical setting.
-3. **Rural U.S. expansion.** Support telehealth delivery and partner with
-   mobile health clinics serving communities with limited neurology
-   access.
-4. **Long-term.** Collaborate with international health organizations
-   such as WHO and USAID to expand multilingual, low-cost screening
-   globally.
-
 ## Disclaimer
 
 NeuroRisk is a student research and design project. The application and
@@ -235,9 +219,6 @@ studies prior to use in patient care.
   imperative*.
 - World Health Organization (WHO). (2023). *Dementia fact sheet*.
 - World Health Organization (WHO). (2024). *Epilepsy fact sheet*.
-
-Dataset citations:
-
 - OpenNeuro ds004504: resting-state EEG in Alzheimer's disease, frontotemporal
   dementia, and healthy control subjects.
 - CHB-MIT Scalp EEG Database (PhysioNet).
